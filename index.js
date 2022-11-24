@@ -52,9 +52,6 @@ async function run() {
         const cyclesCollection = database.collection('Cycles');
         const catagoriessCollection = database.collection('catagories');
         const bookingssCollection = database.collection('bookings');
-        // const reviewsCollection = database.collection('reviews');
-        // const feturesCollection = database.collection('features');
-        // const characterCollection = database.collection('character');
 
 
         // provide json web token
@@ -128,12 +125,33 @@ async function run() {
             const result = await cyclesCollection.updateOne(query, updatedDoc, options);
             res.send(result)
         });
+        app.patch('/recycle/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+            const options = { upsert: true }
+            const updatedDoc = {
+                $set: {
+                    sold: false
+                }
+            }
+            const result = await cyclesCollection.updateOne(query, updatedDoc, options);
+            res.send(result)
+        });
 
 
         app.post('/bookings', async (req, res) => {
             const booking = req.body;
 
             const result = await bookingssCollection.insertOne(booking);
+            res.send(result)
+
+        });
+
+        app.delete('/booking/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) }
+
+            const result = await bookingssCollection.deleteOne(query);
             res.send(result)
 
         });
