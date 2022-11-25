@@ -118,8 +118,6 @@ async function run() {
         app.get('/cycles/myproduct', async (req, res) => {
             const email = req.query.email;
             const query = { email: email };
-            console.log(query)
-
             const result = await cyclesCollection.find(query).toArray();
             res.send(result)
         });
@@ -200,6 +198,22 @@ async function run() {
             res.send(result)
 
         });
+
+        app.delete('/product/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+            console.log(query);
+            const cycleDelete = await cyclesCollection.deleteOne(query);
+            const promoDelete = await promosCollection.deleteOne(query);
+            res.send({ cycleDelete, promoDelete })
+        });
+        app.get('/promos', async (req, res) => {
+            const query = {};
+            const result = await promosCollection.find(query).toArray();
+            res.send(result);
+        })
+
+
 
     }
     finally {
