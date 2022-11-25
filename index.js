@@ -195,7 +195,7 @@ async function run() {
             const query = { _id: ObjectId(id) };
             const cycle = await cyclesCollection.findOne(query);
             cycle.sellerVarified = true;
-            console.log(cycle, item)
+
             const result = await promosCollection.insertOne(cycle);
             res.send(result)
 
