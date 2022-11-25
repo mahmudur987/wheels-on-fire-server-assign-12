@@ -52,6 +52,7 @@ async function run() {
         const cyclesCollection = database.collection('Cycles');
         const catagoriessCollection = database.collection('catagories');
         const bookingssCollection = database.collection('bookings');
+        const promosCollection = database.collection('promos');
 
 
         // provide json web token
@@ -79,14 +80,29 @@ async function run() {
 
             next()
         };
-
+        // users zone
         app.post('/users', async (req, res) => {
             const user = req.body;
             const result = await usersCollection.insertOne(user);
             res.send(result);
         });
 
+        app.get('/users', async (req, res) => {
+            const userType = req.query.userType;
+            const query = { userType: userType }
+            console.log(query)
+            const result = await usersCollection.find(query).toArray();
+            res.send(result);
+        });
 
+        app.get('/user', async (req, res) => {
+            const email = req.query.email;
+            const query = { email: email }
+            const result = await usersCollection.findOne(query);
+            res.send(result);
+        });
+
+        // catagory and main product 
         app.get('/catagories', async (req, res) => {
             const query = {};
             const result = await catagoriessCollection.find(query).toArray();
@@ -95,6 +111,15 @@ async function run() {
 
         app.get('/cycles', async (req, res) => {
             const query = {};
+            const result = await cyclesCollection.find(query).toArray();
+            res.send(result)
+        });
+
+        app.get('/cycles/myproduct', async (req, res) => {
+            const email = req.query.email;
+            const query = { email: email };
+            console.log(query)
+
             const result = await cyclesCollection.find(query).toArray();
             res.send(result)
         });
@@ -125,6 +150,7 @@ async function run() {
             const result = await cyclesCollection.updateOne(query, updatedDoc, options);
             res.send(result)
         });
+
         app.patch('/recycle/:id', async (req, res) => {
             const id = req.params.id;
             const query = { _id: ObjectId(id) };
@@ -138,7 +164,7 @@ async function run() {
             res.send(result)
         });
 
-
+        // bookings
         app.post('/bookings', async (req, res) => {
             const booking = req.body;
 
@@ -161,7 +187,19 @@ async function run() {
             const query = { email: email };
             const result = await bookingssCollection.find(query).toArray();
             res.send(result)
-        })
+        });
+        // promotion zone;
+        app.post('/promos', async (req, res) => {
+            const item = req.body;
+            const id = req.body._id;
+            const query = { _id: ObjectId(id) };
+            const cycle = await cyclesCollection.findOne(query);
+            cycle.sellerVarified = true;
+            console.log(cycle, item)
+            const result = await promosCollection.insertOne(cycle);
+            res.send(result)
+
+        });
 
     }
     finally {
