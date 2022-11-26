@@ -80,9 +80,41 @@ async function run() {
 
             next()
         };
+
+        app.put('/updateuser', async (req, res) => {
+            const email = req.query.email;
+            const filter = { email: email };
+            const updatedDoc = {
+                $set: {
+                    sellerVarified: true
+                }
+            };
+            console.log(filter);
+            const result1 = await cyclesCollection.updateMany(filter, updatedDoc)
+            const result2 = await usersCollection.updateMany(filter, updatedDoc)
+
+
+            res.send({ result1, result2 })
+
+
+        })
+
+
+
+
+
+
         // users zone
         app.post('/users', async (req, res) => {
             const user = req.body;
+            const email = user.email;
+            const query = { email: email }
+            console.log(query)
+            const alreadySavedIn = await usersCollection.findOne(query);
+            console.log(alreadySavedIn)
+            if (alreadySavedIn) {
+                return;
+            }
             const result = await usersCollection.insertOne(user);
             res.send(result);
         });
@@ -90,7 +122,7 @@ async function run() {
         app.get('/users', async (req, res) => {
             const userType = req.query.userType;
             const query = { userType: userType }
-            console.log(query)
+            // console.log(query)
             const result = await usersCollection.find(query).toArray();
             res.send(result);
         });
@@ -106,6 +138,13 @@ async function run() {
         app.get('/catagories', async (req, res) => {
             const query = {};
             const result = await catagoriessCollection.find(query).toArray();
+            res.send(result)
+        });
+
+        app.post('/cycles', async (req, res) => {
+            const cycle = req.body;
+            cycle.registered = new Date(Date.now());
+            const result = await cyclesCollection.insertOne(cycle);
             res.send(result)
         });
 
