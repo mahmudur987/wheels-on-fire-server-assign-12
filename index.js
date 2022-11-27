@@ -1,4 +1,4 @@
-const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId, ObjectID } = require('mongodb');
 const express = require('express')
 const app = express();
 const cors = require('cors');
@@ -30,7 +30,7 @@ const verifyjwt = (req, res, next) => {
         }
         req.decoded = decoded;
     })
-    console.log(token)
+    // console.log(token)
     next();
 
 }
@@ -53,7 +53,8 @@ async function run() {
         const catagoriessCollection = database.collection('catagories');
         const bookingssCollection = database.collection('bookings');
         const promosCollection = database.collection('promos');
-
+        const wishListsCollection = database.collection('wishList')
+        const ServicesCollection = database.collection('services')
 
         // provide json web token
         app.get('/jwt', async (req, res) => {
@@ -75,7 +76,7 @@ async function run() {
         const verifyAdmin = async (req, res, next) => {
             const decodedEmail = req.decoded.email;
             const query = { email: decodedEmail };
-            const user = await usersCollections.findOne(query)
+            const user = await usersCollection.findOne(query)
             if (user?.role !== 'admin') {
                 return res.status(401).send({ message: 'you havent authorization for that' })
             }
@@ -86,6 +87,33 @@ async function run() {
         };
 
 
+
+        app.get('/services', async (req, res) => {
+            const query = {}
+            const result = await ServicesCollection.find(query).toArray();
+            res.send(result)
+        })
+
+
+
+        // wish list
+        app.post('/wishlist/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+            const email = req.body.email;
+            const cycle = await cyclesCollection.findOne(query);
+            cycle.wishListEmail = email
+            const result = await wishListsCollection.insertOne(cycle);
+            res.send(result);
+
+        })
+
+        app.get('/wishlist', async (req, res) => {
+            const email = req.query.email;
+            const query = { wishListEmail: email };
+            const result = await wishListsCollection.find(query).toArray();
+            res.send(result)
+        })
 
         app.put('/updateuser', async (req, res) => {
             const email = req.query.email;
@@ -124,7 +152,7 @@ async function run() {
         app.get('/users', verifyjwt, verifyAdmin, async (req, res) => {
             const userType = req.query.userType;
             const query = { userType: userType }
-            // console.log(query)
+            console.log(query)
             const result = await usersCollection.find(query).toArray();
             res.send(result);
         });
