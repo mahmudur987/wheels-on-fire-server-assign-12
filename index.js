@@ -1,4 +1,4 @@
-const { MongoClient, ServerApiVersion, ObjectId, ObjectID } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const express = require('express')
 const app = express();
 const cors = require('cors');
@@ -9,7 +9,7 @@ const port = process.env.PORT || 5000;
 
 
 
-// middlewere
+// middle were
 app.use(cors());
 app.use(express.json());
 
@@ -26,11 +26,11 @@ const verifyjwt = (req, res, next) => {
 
     jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, function (error, decoded) {
         if (error) {
-            res.status(401).send({ message: 'in authorized access' });
+            res.status(401).send({ message: 'unauthorized access' });
         }
         req.decoded = decoded;
     })
-    // console.log(token)
+
     next();
 
 }
@@ -46,6 +46,7 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
 
 // Mongodb CURD operation
 async function run() {
+
     try {
         const database = client.db('WheelsOnFire');
         const usersCollection = database.collection('users');
@@ -59,14 +60,13 @@ async function run() {
         // provide json web token
         app.get('/jwt', async (req, res) => {
             const email = req.query.email;
-            const query = { email: email }
-            console.log(query)
+            const query = { email: email };
             const user = await usersCollection.findOne(query);
             console.log(user)
 
             if (user) {
-                const token = jwt.sign({ email }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: "5d" });
-                console.log('inside token', token)
+                const token = jwt.sign({ email }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: "1d" });
+
                 return res.send({ accessToken: token })
             }
             res.status(401).send({ accessToken: '' })
@@ -78,12 +78,10 @@ async function run() {
             const query = { email: decodedEmail };
             const user = await usersCollection.findOne(query)
             if (user?.role !== 'admin') {
-                return res.status(401).send({ message: 'you havent authorization for that' })
+                return res.status(401).send({ message: 'you haven"t authorization for that' })
             }
-            // console.log('inside verify admin', req.decoded.email)
 
-
-            next()
+            next();
         };
 
 
@@ -96,24 +94,28 @@ async function run() {
 
 
 
+
         // wish list
         app.post('/wishlist/:id', async (req, res) => {
             const id = req.params.id;
             const query = { _id: ObjectId(id) };
-            const email = req.body.email;
             const cycle = await cyclesCollection.findOne(query);
-            cycle.wishListEmail = email
-            const result = await wishListsCollection.insertOne(cycle);
-            res.send(result);
+            cycle.wishListEmail = req.body.email;
+            const newcycle = cycle;
+            console.log(newcycle);
 
-        })
+            // const result = await wishListsCollection.insertOne(cycle);
+            // res.send(result);
+
+
+        });
 
         app.get('/wishlist', async (req, res) => {
             const email = req.query.email;
             const query = { wishListEmail: email };
             const result = await wishListsCollection.find(query).toArray();
             res.send(result)
-        })
+        });
 
         app.put('/updateuser', async (req, res) => {
             const email = req.query.email;
@@ -123,7 +125,7 @@ async function run() {
                     sellerVarified: true
                 }
             };
-            console.log(filter);
+            // console.log(filter);
             const result1 = await cyclesCollection.updateMany(filter, updatedDoc)
             const result2 = await usersCollection.updateMany(filter, updatedDoc)
 
@@ -141,7 +143,7 @@ async function run() {
             const query = { email: email }
             console.log(query)
             const alreadySavedIn = await usersCollection.findOne(query);
-            console.log(alreadySavedIn)
+            // console.log(alreadySavedIn)
             if (alreadySavedIn) {
                 return;
             }
@@ -152,7 +154,7 @@ async function run() {
         app.get('/users', verifyjwt, verifyAdmin, async (req, res) => {
             const userType = req.query.userType;
             const query = { userType: userType }
-            console.log(query)
+            // console.log(query)
             const result = await usersCollection.find(query).toArray();
             res.send(result);
         });
@@ -187,7 +189,7 @@ async function run() {
         app.get('/cycles/myproduct', verifyjwt, async (req, res) => {
             const decoded = req.decoded;
             const email = req.query.email;
-            console.log(decoded.email)
+            // console.log(decoded.email)
             if (email !== decoded.email) {
                 return res.status(401).send({ message: 'in authorized access' })
             }
@@ -276,7 +278,7 @@ async function run() {
         app.delete('/product/:id', async (req, res) => {
             const id = req.params.id;
             const query = { _id: ObjectId(id) };
-            console.log(query);
+            // console.log(query);
             const cycleDelete = await cyclesCollection.deleteOne(query);
             const promoDelete = await promosCollection.deleteOne(query);
             res.send({ cycleDelete, promoDelete })
@@ -299,7 +301,7 @@ run().catch(console.dir);
 
 
 app.get('/', (req, res) => {
-    res.send('helow world')
+    res.send('hellow world')
 })
 
 app.listen(port, () => {
