@@ -19,18 +19,18 @@ app.use(express.json());
 const verifyjwt = (req, res, next) => {
     const authHead = req.headers.authorization;
     if (!authHead) {
-        return res.status(401).send({ message: 'in authorized access' })
+        return res.status(401).send({ message: 'un authorized access' })
     }
 
     const token = authHead.split(' ')[1];
 
     jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, function (error, decoded) {
         if (error) {
-            res.status(401).send({ message: 'in authorized access' })
+            res.status(401).send({ message: 'in authorized access' });
         }
         req.decoded = decoded;
     })
-    // console.log(token)
+    console.log(token)
     next();
 
 }
@@ -59,9 +59,13 @@ async function run() {
         app.get('/jwt', async (req, res) => {
             const email = req.query.email;
             const query = { email: email }
-            const user = await usersCollections.findOne(query);
+            console.log(query)
+            const user = await usersCollection.findOne(query);
+            console.log(user)
+
             if (user) {
-                const token = jwt.sign({ email }, process.env.ACCESS_TOKEN, { expiresIn: "1h" });
+                const token = jwt.sign({ email }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: "5d" });
+                console.log('inside token', token)
                 return res.send({ accessToken: token })
             }
             res.status(401).send({ accessToken: '' })
@@ -80,6 +84,8 @@ async function run() {
 
             next()
         };
+
+
 
         app.put('/updateuser', async (req, res) => {
             const email = req.query.email;
@@ -100,10 +106,6 @@ async function run() {
         })
 
 
-
-
-
-
         // users zone
         app.post('/users', async (req, res) => {
             const user = req.body;
@@ -119,7 +121,7 @@ async function run() {
             res.send(result);
         });
 
-        app.get('/users', async (req, res) => {
+        app.get('/users', verifyjwt, verifyAdmin, async (req, res) => {
             const userType = req.query.userType;
             const query = { userType: userType }
             // console.log(query)
@@ -141,7 +143,7 @@ async function run() {
             res.send(result)
         });
 
-        app.post('/cycles', async (req, res) => {
+        app.post('/cycles', verifyjwt, async (req, res) => {
             const cycle = req.body;
             cycle.registered = new Date(Date.now());
             const result = await cyclesCollection.insertOne(cycle);
@@ -154,8 +156,13 @@ async function run() {
             res.send(result)
         });
 
-        app.get('/cycles/myproduct', async (req, res) => {
+        app.get('/cycles/myproduct', verifyjwt, async (req, res) => {
+            const decoded = req.decoded;
             const email = req.query.email;
+            console.log(decoded.email)
+            if (email !== decoded.email) {
+                return res.status(401).send({ message: 'in authorized access' })
+            }
             const query = { email: email };
             const result = await cyclesCollection.find(query).toArray();
             res.send(result)
@@ -219,7 +226,7 @@ async function run() {
 
         });
 
-        app.get('/userbooking', async (req, res) => {
+        app.get('/userbooking', verifyjwt, async (req, res) => {
             const email = req.query.email;
             const query = { email: email };
             const result = await bookingssCollection.find(query).toArray();
@@ -246,6 +253,7 @@ async function run() {
             const promoDelete = await promosCollection.deleteOne(query);
             res.send({ cycleDelete, promoDelete })
         });
+
         app.get('/promos', async (req, res) => {
             const query = {};
             const result = await promosCollection.find(query).toArray();
